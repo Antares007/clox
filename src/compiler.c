@@ -513,7 +513,7 @@ static void function(FunctionType type) {
   block();
 
   ObjFunction *function = endCompiler();
-  emitBytes(OP_CONSTANT, makeConstant(OBJ_VAL(function)));
+  emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
 }
 static void funDeclaration() {
   uint8_t global = parseVariable("Expect function name.");
