@@ -1,0 +1,14 @@
+fun fib(n) {
+  if (n < 2) return n;
+  return fib(n - 2) + fib(n - 1);
+}
+var start = clock();
+print fib(35);
+var a = clock() - start;
+print a;
+
+start = clock();
+print fibNative(35);
+var b = clock() - start;
+print b;
+print a/b;
