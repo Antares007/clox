@@ -22,6 +22,10 @@ static Value fibNative(int argCount, Value *args) {
 static Value clockNative(int argCount, Value *args) {
   return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
 }
+static Value gcNative(int argCount, Value *args) {
+  collectGarbage();
+  return NIL_VAL;
+}
 
 static void resetStack() {
   vm.stackTop = vm.stack;
@@ -57,11 +61,19 @@ static void defineNative(const char *name, NativeFn function) {
 void initVM() {
   resetStack();
   vm.objects = NULL;
+  vm.bytesAllocated = 0;
+  vm.nextGC = 1024 * 1024;
+
+  vm.grayCount = 0;
+  vm.grayCapacity = 0;
+  vm.grayStack = NULL;
+
   initTable(&vm.globals);
   initTable(&vm.strings);
 
   defineNative("clock", clockNative);
   defineNative("fibNative", fibNative);
+  defineNative("gc", gcNative);
 }
 
 void freeVM() {
@@ -150,14 +162,16 @@ static bool isFalsey(Value value) {
   return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
 }
 static void concatenate() {
-  ObjString *b = AS_STRING(pop());
-  ObjString *a = AS_STRING(pop());
+  ObjString *b = AS_STRING(peek(0));
+  ObjString *a = AS_STRING(peek(1));
   int length = a->length + b->length;
   char *chars = ALLOCATE(char, length + 1);
   memcpy(chars, a->chars, a->length);
   memcpy(chars + a->length, b->chars, b->length);
   chars[length] = '\0';
   ObjString *result = takeString(chars, length);
+  pop();
+  pop();
   push(OBJ_VAL(result));
 }
 static InterpretResult run() {
